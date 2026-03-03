@@ -1,0 +1,115 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# MARKETING DIRECTOR OS — REQUIREMENTS.TXT
+# ═══════════════════════════════════════════════════════════════════════════════
+# Dependências Python para o Marketing Engine
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ───────────────────────────────────────────────────────────────────────────────
+# CORE ENGINE
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Monitoramento de arquivos em tempo real
+watchdog>=3.0.0
+
+# Manipulação de dados tabulares (CSV, Excel)
+pandas>=2.0.0
+
+# Leitura e escrita de Excel
+openpyxl>=3.1.0
+
+# Cálculos estatísticos (Z-Score, NumPy)
+numpy>=1.24.0
+
+# ───────────────────────────────────────────────────────────────────────────────
+# WEB SERVER (WEBHOOKS)
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Servidor de webhooks (FastAPI + Uvicorn)
+fastapi>=0.100.0
+uvicorn>=0.20.0
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SUPABASE CONNECTION
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Cliente oficial do Supabase para Python
+supabase>=2.0.0
+
+# Cliente PostgreSQL
+psycopg2-binary>=2.9.0
+
+# ───────────────────────────────────────────────────────────────────────────────
+# INTELIGÊNCIA ARTIFICIAL
+# ───────────────────────────────────────────────────────────────────────────────
+
+# OpenAI API (GPT-4, embeddings)
+openai>=1.0.0
+
+# Contagem de tokens para chunking
+tiktoken>=0.5.0
+
+# Anthropic API (Claude)
+anthropic>=0.18.0
+
+# Groq API (LLM rápido e grátis)
+groq>=0.4.0
+
+# Ollama Python client (LLM local)
+ollama>=0.1.0
+
+# ───────────────────────────────────────────────────────────────────────────────
+# CMO 360° (v5.3)
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Visualização de dados (opcional para dashboards)
+plotly>=5.18.0
+
+# Exportação de relatórios
+jinja2>=3.1.0
+
+# ───────────────────────────────────────────────────────────────────────────────
+# PROCESSAMENTO DE PDF
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Leitura de PDFs
+pypdf>=3.17.0
+
+# ───────────────────────────────────────────────────────────────────────────────
+# UTILITÁRIOS
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Variáveis de ambiente (.env)
+python-dotenv>=1.0.0
+
+# Validação de dados com Pydantic
+pydantic>=2.5.0
+
+# Requisições HTTP
+requests>=2.31.0
+
+# Manipulação de datas
+python-dateutil>=2.8.0
+
+# ───────────────────────────────────────────────────────────────────────────────
+# DESENVOLVIMENTO (OPCIONAL)
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Type hints estáticos
+# mypy>=1.7.0
+
+# Testes
+# pytest>=7.4.0
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INSTRUÇÕES DE INSTALAÇÃO
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# No container Docker (automático via Dockerfile):
+#   pip install -r requirements.txt
+#
+# Localmente (para desenvolvimento):
+#   python -m venv venv
+#   venv\Scripts\activate  # Windows
+#   pip install -r requirements.txt
+#
+# ═══════════════════════════════════════════════════════════════════════════════

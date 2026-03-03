@@ -1,0 +1,34 @@
+{
+  "influencers": [
+    {
+      "name": "Priscila Kuhn",
+      "coupon": "PRISCILA10",
+      "discount_percent": 10
+    },
+    {
+      "name": "Ewylin Salvatori",
+      "coupon": "EWYLIN10",
+      "discount_percent": 10
+    },
+    {
+      "name": "Solange",
+      "coupon": "SOLANGE10",
+      "discount_percent": 10
+    },
+    {
+      "name": "Caroline",
+      "coupon": "CAROLINE10",
+      "discount_percent": 10
+    },
+    {
+      "name": "Ketlyn",
+      "coupon": "KETLYN10",
+      "discount_percent": 10
+    }
+  ],
+  "rules": [
+    "Cupom dá 10% de desconto",
+    "Não acumula com outras promoções",
+    "Registrar que veio pelo cupom"
+  ]
+}

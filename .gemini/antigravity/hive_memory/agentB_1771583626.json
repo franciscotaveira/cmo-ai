@@ -1,0 +1,1 @@
+{"agent": "backend-specialist", "task": "db-optimization", "outcome": "success", "learning": "Índices GIN melhoram performance em buscas de campos JSONB no Supabase."}

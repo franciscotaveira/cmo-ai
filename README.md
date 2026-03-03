@@ -1,145 +1,295 @@
-# Antigravity Kit
+# 🎯 CMO 360° v6.1 — Platform de Inteligência de Marketing
 
-> AI Agent templates with Skills, Agents, and Workflows
+> **Sistema completo de marketing para C-Level com IA que aprende com casos reais**
 
-<div  align="center">
-    <a href="https://unikorn.vn/p/antigravity-kit?ref=unikorn" target="_blank"><img src="https://unikorn.vn/api/widgets/badge/antigravity-kit?theme=dark" alt="Antigravity Kit - Nổi bật trên Unikorn.vn" style="width: 210px; height: 54px;" width="210" height="54" /></a>
-    <a href="https://unikorn.vn/p/antigravity-kit?ref=unikorn" target="_blank"><img src="https://unikorn.vn/api/widgets/badge/antigravity-kit/rank?theme=dark&type=daily" alt="Antigravity Kit - Hàng ngày" style="width: 250px; height: 64px;" width="250" height="64" /></a>
-    <a href="https://launch.j2team.dev/products/antigravity-kit" target="_blank"><img src="https://launch.j2team.dev/badge/antigravity-kit/dark" alt="Antigravity Kit on J2TEAM Launch" width="250" height="54" /></a>
+[![Version](https://img.shields.io/badge/version-6.1-blue.svg)](https://github.com/yourusername/cmo-360-platform)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![Status](https://img.shields.io/badge/status-production%20ready-green.svg)]()
+
+---
+
+## 📊 O Que É
+
+**CMO 360°** é uma plataforma completa de inteligência de marketing que:
+
+- ✅ **Monitora** métricas em tempo real (24/7)
+- ✅ **Detecta** anomalias automaticamente (Z-Score)
+- ✅ **Gera** insights acionáveis com IA
+- ✅ **Aprende** com casos passados (CMO-Bench™)
+- ✅ **Notifica** por e-mail/Slack/Telegram
+- ✅ **Custo zero** de infra (free tiers)
+
+---
+
+## 🚀 Funcionalidades Principais
+
+### **1. Detecção de Anomalias** 🔴
+```
+CAC subiu 120% → Z-Score 3.5 → Alerta Crítico → E-mail enviado
+```
+
+### **2. CMO-Bench™ (Aprendizado)** 🧠
+```
+Problema similar → Busca na base → Aplica solução → Verifica → Aprende
+```
+
+### **3. Notificações Sob Demanda** 📧
+- Alertas críticos (imediatamente)
+- Daily digest (18:00)
+- Weekly summary (segunda 09:00)
+- Custo: **R$ 0/mês**
+
+### **4. Dashboards Automáticos** 📊
+- 10 pastas especializadas no Obsidian
+- CMO Executive Dashboard
+- Growth & Performance
+- Budget & ROI
+
+---
+
+## 🏗️ Arquitetura
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  FONTES → PROCESSAMENTO → BANCO → IA → AÇÕES → OUTPUT  │
+├─────────────────────────────────────────────────────────┤
+│  CSV/Excel  →  Watcher  →  Supabase  →  CMO-Bench  →   │
+│  APIs       →  Processor →  (8 tables) →  AI/Groq  →   │
+│                              ↓                          │
+│                    NotificationDispatcher               │
+│                    (Email/Slack/Telegram)               │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📁 Estrutura
+
+```
+cmo-360-platform/
+├── 📂 mkt/engine/              # Motor principal
+│   ├── main.py                 # Entry point
+│   ├── src/                    # Módulos Python
+│   │   ├── database.py
+│   │   ├── processor.py
+│   │   ├── watcher.py
+│   │   ├── cmo_bench.py        ⭐ CMO-Bench (v6.0)
+│   │   ├── notification_dispatcher.py  ⭐ E-mails (v6.1)
+│   │   └── ... (15 módulos)
+│   └── test_*.py               # Testes
+│
+├── 📂 sql/                     # Banco de dados
+│   └── 01-08_create_*.sql     # Schema completo
+│
+├── 📂 frontend/                # Web Platform (React)
+│   └── src/App.jsx
+│
+├── 📄 docker-compose.yml       # Docker
+├── 📄 .env.example             # Template .env
+└── 📚 Documentação/
+    ├── CMO_360_FINAL.md
+    ├── CMO_BENCH_INTELIGENCIA.md
+    └── NOTIFICACOES_EMAIL_CONFIGURADAS.md
+```
+
+---
+
+## 🚀 Quick Start
+
+### **1. Clone**
+```bash
+git clone https://github.com/yourusername/cmo-360-platform.git
+cd cmo-360-platform
+```
+
+### **2. Configure .env**
+```bash
+cp mkt/.env.example mkt/.env
+
+# Edite com:
+# - SUPABASE_URL, SUPABASE_KEY
+# - SMTP_USER, SMTP_PASSWORD (Gmail)
+# - GROQ_API_KEY (opcional)
+# - PATH_TO_DRIVE, PATH_TO_OBSIDIAN
+```
+
+### **3. Instale**
+```bash
+# Criar ambiente virtual
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+source .venv/bin/activate  # Linux/Mac
+
+# Instalar dependências
+pip install -r mkt/engine/requirements.txt
+```
+
+### **4. Suba o Banco**
+```bash
+# No Supabase SQL Editor:
+# Execute: sql/01-08_create_*.sql (na ordem)
+```
+
+### **5. Teste**
+```bash
+# Testar notificações
+python mkt/engine/test_notifications.py
+
+# Testar IA
+python mkt/engine/test_ai_insights.py
+```
+
+### **6. Rode**
+```bash
+python -m mkt.engine.main
+```
+
+---
+
+## 📊 Módulos Principais
+
+| Módulo | Versão | Função |
+| :----- | :----- | :----- |
+| `cmo_bench.py` | v6.0 ⭐ | Aprende com casos reais (tipo SWE-bench) |
+| `notification_dispatcher.py` | v6.1 ⭐ | E-mails, Slack, Telegram |
+| `ai_insights.py` | v5.2 | IA generativa (Groq/Llama-3) |
+| `growth_marketing.py` | v5.3 | Growth & Performance |
+| `brand_communication.py` | v5.3 | Brand Health |
+| `executive_dashboard.py` | v5.3 | Dashboard C-Level |
+| `budget_tracker.py` | v5.1 | Budget & ROI |
+| `marketing_strategy.py` | v5.1 | Estratégias automáticas |
+
+---
+
+## 🗄️ Banco de Dados (8 Tabelas)
+
+```sql
+1. tenants              -- Empresas/unidades
+2. marketing_assets     -- Arquivos processados
+3. business_metrics     -- KPIs (CAC, LTV, ROAS, etc.)
+4. anomaly_alerts       -- Alertas de anomalias
+5. strategic_insights   -- Insights da IA
+6. audit_logs           -- Log de auditoria
+7. automation_queue     -- Fila de ações
+8. knowledge_base       -- Casos aprendidos (CMO-Bench)
+```
+
+---
+
+## 🔔 Notificações
+
+### **Canais Suportados**
+
+| Canal | Custo | Status |
+| :---- | :---- | :----- |
+| **E-mail (SMTP)** | Grátis | ✅ Pronto |
+| **Slack (Webhook)** | Grátis | ✅ Pronto |
+| **Telegram (Bot)** | Grátis | ✅ Pronto |
+| **WhatsApp (Twilio)** | $0.005/msg | ✅ Pronto |
+| **Push (Firebase)** | Grátis | ✅ Pronto |
+
+### **Tipos de E-mail**
+
+1. **Alerta Crítico** — HTML rico, métricas em destaque
+2. **Daily Digest** — Resumo diário (18:00)
+3. **Weekly Summary** — Resumo semanal (segunda 09:00)
+
+---
+
+## 💰 Custos de Infra
+
+| Serviço | Plano | Custo |
+| :------ | :---- | :---- |
+| **Supabase** | Free | R$ 0/mês |
+| **Groq** | Free | R$ 0/mês |
+| **Gmail** | Free | R$ 0/mês |
+| **Redis** | Included | R$ 0/mês |
+| **Total** | | **R$ 0/mês** |
+
+---
+
+## 📈 Roadmap
+
+| Versão | Status | Funcionalidades |
+| :----- | :----- | :-------------- |
+| **v5.0** | ✅ | Core (Watcher, Processor, Obsidian) |
+| **v5.1** | ✅ | Planning (Strategy, Goals, Calendar, Budget) |
+| **v5.2** | ✅ | AI (Groq, Insights) |
+| **v5.3** | ✅ | CMO 360° (Growth, Brand, Dashboard) |
+| **v6.0** | ✅ | CMO-Bench (Aprendizado) |
+| **v6.1** | ✅ | Notifications (Email, Slack, Telegram) |
+| **v7.0** | 🔄 | Web Platform (React + Docker) |
+| **v8.0** | 🔄 | APIs (Google Ads, Meta, GA4) |
+
+---
+
+## 🧪 Testes
+
+```bash
+# Testar notificações
+python mkt/engine/test_notifications.py
+
+# Testar IA
+python mkt/engine/test_ai_insights.py
+
+# Testar conexão Supabase
+python mkt/engine/test_supabase_connection.py
+```
+
+---
+
+## 📚 Documentação
+
+| Arquivo | Descrição |
+| :------ | :-------- |
+| `CMO_360_FINAL.md` | Visão geral completa |
+| `CMO_BENCH_INTELIGENCIA.md` | CMO-Bench (aprendizado) |
+| `NOTIFICACOES_EMAIL_CONFIGURADAS.md` | Notificações por e-mail |
+| `CONFIG_EMAIL.md` | Configuração de e-mail |
+| `README_WEB_PLATFORM.md` | Web Platform (Docker) |
+
+---
+
+## 🤝 Contribuindo
+
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/AmazingFeature`)
+3. Commit (`git commit -m 'Add AmazingFeature'`)
+4. Push (`git push origin feature/AmazingFeature`)
+5. Pull Request
+
+---
+
+## 📄 Licença
+
+MIT License - veja [LICENSE](LICENSE) para detalhes.
+
+---
+
+## 👨‍💻 Autor
+
+**Seu Nome**
+- GitHub: [@yourusername](https://github.com/yourusername)
+- LinkedIn: [Seu Perfil](https://linkedin.com/in/yourprofile)
+
+---
+
+## 🙏 Agradecimentos
+
+- [Supabase](https://supabase.com) - Banco de dados
+- [Groq](https://groq.com) - IA rápida e grátis
+- [SWE-bench](https://www.swebench.com) - Inspiração para CMO-Bench
+- [Obsidian](https://obsidian.md) - Dashboards
+
+---
+
+<div align="center">
+
+**🚀 CMO 360° v6.1**
+
+*Inteligência de Marketing para C-Level*
+
+[Report Bug](https://github.com/yourusername/cmo-360-platform/issues) · [Request Feature](https://github.com/yourusername/cmo-360-platform/issues)
+
 </div>
-
-## Quick Install
-
-```bash
-npx @vudovn/ag-kit init
-```
-
-Or install globally:
-
-```bash
-npm install -g @vudovn/ag-kit
-ag-kit init
-```
-
-This installs the `.agent` folder containing all templates into your project.
-
-### ⚠️ Important Note on `.gitignore`
-If you are using AI-powered editors like **Cursor** or **Windsurf**, adding the `.agent/` folder to your `.gitignore` may prevent the IDE from indexing the workflows. This results in slash commands (like `/plan`, `/debug`) not appearing in the chat suggestion dropdown.
-
-**Recommended Solution:**
-To keep the `.agent/` folder local (not tracked by Git) while maintaining AI functionality:
-1. Ensure `.agent/` is **NOT** in your project's `.gitignore`.
-2. Instead, add it to your local exclude file: `.git/info/exclude`
-
-## What's Included
-
-| Component     | Count | Description                                                        |
-| ------------- | ----- | ------------------------------------------------------------------ |
-| **Agents**    | 20    | Specialist AI personas (frontend, backend, security, PM, QA, etc.) |
-| **Skills**    | 37    | Domain-specific knowledge modules                                  |
-| **Workflows** | 11    | Slash command procedures                                           |
-
-
-## Usage
-
-### Using Agents
-
-**No need to mention agents explicitly!** The system automatically detects and applies the right specialist(s):
-
-```
-You: "Add JWT authentication"
-AI: 🤖 Applying @security-auditor + @backend-specialist...
-
-You: "Fix the dark mode button"
-AI: 🤖 Using @frontend-specialist...
-
-You: "Login returns 500 error"
-AI: 🤖 Using @debugger for systematic analysis...
-```
-
-**How it works:**
-
-- Analyzes your request silently
-
-- Detects domain(s) automatically (frontend, backend, security, etc.)
-- Selects the best specialist(s)
-- Informs you which expertise is being applied
-- You get specialist-level responses without needing to know the system architecture
-
-**Benefits:**
-
-- ✅ Zero learning curve - just describe what you need
-- ✅ Always get expert responses
-- ✅ Transparent - shows which agent is being used
-- ✅ Can still override by mentioning agent explicitly
-
-### Using Workflows
-
-Invoke workflows with slash commands:
-
-| Command          | Description                           |
-| ---------------- | ------------------------------------- |
-| `/brainstorm`    | Explore options before implementation |
-| `/create`        | Create new features or apps           |
-| `/debug`         | Systematic debugging                  |
-| `/deploy`        | Deploy application                    |
-| `/enhance`       | Improve existing code                 |
-| `/orchestrate`   | Multi-agent coordination              |
-| `/plan`          | Create task breakdown                 |
-| `/preview`       | Preview changes locally               |
-| `/status`        | Check project status                  |
-| `/test`          | Generate and run tests                |
-| `/ui-ux-pro-max` | Design with 50 styles                 |
-
-Example:
-
-```
-/brainstorm authentication system
-/create landing page with hero section
-/debug why login fails
-```
-
-### Using Skills
-
-Skills are loaded automatically based on task context. The AI reads skill descriptions and applies relevant knowledge.
-
-## CLI Tool
-
-| Command         | Description                               |
-| --------------- | ----------------------------------------- |
-| `ag-kit init`   | Install `.agent` folder into your project |
-| `ag-kit update` | Update to the latest version              |
-| `ag-kit status` | Check installation status                 |
-
-### Options
-
-```bash
-ag-kit init --force        # Overwrite existing .agent folder
-ag-kit init --path ./myapp # Install in specific directory
-ag-kit init --branch dev   # Use specific branch
-ag-kit init --quiet        # Suppress output (for CI/CD)
-ag-kit init --dry-run      # Preview actions without executing
-```
-
-## Documentation
-
-- **[Web App Example](https://antigravity-kit-v2.vercel.app/docs/guide/examples/brainstorm)** - Step-by-step guide to creating a web application
-- **[Online Docs](https://antigravity-kit-v2.vercel.app/docs)** - Browse all documentation online
-
-## Buy me coffee
-
-<p align="center">
-  <a href="https://buymeacoffee.com/vudovn">
-    <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee" />
-  </a>
-</p>
-
-<p align="center"> - or - </p>
-
-<p align="center">
-  <img src="https://img.vietqr.io/image/mbbank-0779440918-compact.jpg" alt="Buy me coffee" width="200" />
-</p>
-
-## License
-
-MIT © Vudovn

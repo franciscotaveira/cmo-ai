@@ -1,0 +1,170 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# MARKETING DIRECTOR OS — .GITIGNORE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ───────────────────────────────────────────────────────────────────────────────
+# AMBIENTE E SEGREDO
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Variáveis de ambiente (NUNCA commit isso!)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Chaves de API
+*.key
+*.pem
+*.crt
+secrets.json
+credentials.json
+
+# ───────────────────────────────────────────────────────────────────────────────
+# PYTHON
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environments virtuais
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ───────────────────────────────────────────────────────────────────────────────
+# DOCKER
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Docker compose override
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Docker volumes
+volumes/
+
+# Logs
+*.log
+
+# ───────────────────────────────────────────────────────────────────────────────
+# OBSIDIAN (NÃO SINCRONIZAR VAULT REAL)
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Vault do Obsidian (dados do usuário)
+*.md
+.canvas
+
+# Plugins do Obsidian
+.obsidian/plugins/
+
+# Cache do Obsidian
+.obsidian/cache/
+.obsidian/app.json
+
+# ───────────────────────────────────────────────────────────────────────────────
+# DRIVE DATA (DADOS DE TESTE)
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Dados de teste
+drive_data/
+test_data/
+*.csv
+*.xlsx
+*.xls
+*.pdf
+
+# Exceto templates
+!drive_data/.gitkeep
+!test_data/.gitkeep
+
+# ───────────────────────────────────────────────────────────────────────────────
+# WINDMILL
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Dados persistentes do Windmill
+windmill_data/
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SISTEMA OPERACIONAL
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+
+# ───────────────────────────────────────────────────────────────────────────────
+# DOCUMENTAÇÃO GERADA
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Logs de build
+_build/
+output/
+generated/
+
+# Notas temporárias
+*.tmp
+*.temp
+notes/
+rascunhos/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# O QUE DEVEMOS COMMITAR
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# ✅ Sim:
+# - Código fonte (.py, .yml, .sql, .md)
+# - Dockerfile e docker-compose.yml
+# - .env.example (modelo)
+# - Documentação
+# - Scripts de deploy
+#
+# ❌ Não:
+# - .env (com credenciais reais)
+# - Dados de produção
+# - Chaves de API
+# - Vaults do Obsidian reais
+# - Arquivos CSV/PDF reais de clientes
+#
+# ═══════════════════════════════════════════════════════════════════════════════

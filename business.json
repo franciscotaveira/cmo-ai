@@ -1,0 +1,66 @@
+{
+  "name": "Haven Escovaria & Esmalteria",
+  "type": "beauty_salon",
+  "positioning": "Espaço sofisticado, moderno e acolhedor, com valores competitivos. Não é franquia.",
+  "tagline": "Sua beleza em boas mãos",
+  "address": {
+    "street": "Rua Mato Grosso",
+    "number": "837E",
+    "neighborhood": "Jardim Itália",
+    "city": "Chapecó",
+    "state": "SC",
+    "zip": "89816-000",
+    "country": "Brasil",
+    "reference": "Próximo ao centro"
+  },
+  "contact": {
+    "whatsapp": "primary_channel",
+    "instagram": "@haven.escovaria"
+  },
+  "hours": {
+    "monday": {
+      "open": "08:00",
+      "close": "20:00"
+    },
+    "tuesday": {
+      "open": "08:00",
+      "close": "20:00"
+    },
+    "wednesday": {
+      "open": "08:00",
+      "close": "20:00"
+    },
+    "thursday": {
+      "open": "08:00",
+      "close": "20:00"
+    },
+    "friday": {
+      "open": "08:00",
+      "close": "20:00"
+    },
+    "saturday": {
+      "open": "08:00",
+      "close": "20:00"
+    },
+    "sunday": "closed"
+  },
+  "hours_note": "Funcionamos de segunda a sábado, das 8h às 20h, sem pausa para almoço",
+  "parking": {
+    "front": {
+      "available": true,
+      "description": "Estacionamento em frente ao prédio"
+    },
+    "corner": {
+      "available": true,
+      "spots": 4,
+      "description": "4 vagas na esquina"
+    }
+  },
+  "payment_methods": [
+    "Pix",
+    "Cartão de Crédito",
+    "Cartão de Débito",
+    "Dinheiro"
+  ],
+  "packages_payment_note": "Pacotes são somente à vista (Pix ou dinheiro)"
+}

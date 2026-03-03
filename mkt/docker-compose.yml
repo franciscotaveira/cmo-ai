@@ -1,0 +1,196 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# MARKETING DIRECTOR OS — DOCKER COMPOSE v4.0
+# ═══════════════════════════════════════════════════════════════════════════════
+# PROJETO: Marketing Neural Hub para TDAH
+# FILOSOFIA: Local-First • Event-Driven • Truth in Data
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SERVIÇO 1: MARKETING ENGINE (CÉREBRO PYTHON)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  marketing_engine:
+    build:
+      context: ./engine
+      dockerfile: Dockerfile
+    container_name: lux_marketing_engine
+    restart: unless-stopped
+    
+    ports:
+      - "8088:8088"
+    
+    volumes:
+      # Mapeia seu Google Drive real para dentro do container
+      - ${PATH_TO_DRIVE}:/app/drive_input
+      
+      # Mapeia seu Obsidian real para dentro do container
+      - ${PATH_TO_OBSIDIAN}:/app/obsidian_output
+    
+    environment:
+      # Credenciais do Supabase
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      
+      # Chave da IA (OpenAI ou Gemini)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      
+      # Configurações do engine
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - WATCHER_RECURSIVE=true
+    
+    networks:
+      - lux_network
+    
+    # Logs com rotação
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SERVIÇO 2: WINDMILL (PAINEL OPERACIONAL)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  windmill:
+    image: ghcr.io/windmill-labs/windmill:latest
+    container_name: lux_windmill_panel
+    restart: always
+    
+    ports:
+      - "${WINDMILL_PORT:-8000}:8000"
+    
+    volumes:
+      # Necessário para o Windmill gerenciar workers
+      - /var/run/docker.sock:/var/run/docker.sock
+    
+    environment:
+      - BASE_URL=http://localhost:${WINDMILL_PORT:-8000}
+      - DATABASE_URL=postgres://windmill:${DB_PASSWORD}@windmill_db:5432/windmill
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MODE=production
+    
+    depends_on:
+      windmill_db:
+        condition: service_healthy
+    
+    networks:
+      - lux_network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SERVIÇO 3: BANCO DE DADOS DO WINDMILL
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  windmill_db:
+    image: postgres:15-alpine
+    container_name: lux_windmill_db
+    restart: always
+    
+    environment:
+      POSTGRES_USER: windmill
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: windmill
+    
+    volumes:
+      - windmill_postgres_data:/var/lib/postgresql/data
+    
+    networks:
+      - lux_network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U windmill -d windmill"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SERVIÇO 4: PGADMIN (OPCIONAL - ADMINISTRAÇÃO)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: lux_pgadmin
+    restart: unless-stopped
+    
+    ports:
+      - "${PGADMIN_PORT:-8080}:80"
+    
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@lux.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    
+    networks:
+      - lux_network
+    
+    depends_on:
+      - windmill_db
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# REDES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+networks:
+  lux_network:
+    driver: bridge
+    name: lux_marketing_network
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VOLUMES PERSISTENTES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+volumes:
+  windmill_postgres_data:
+    driver: local
+    name: lux_windmill_postgres_data
+  
+  pgadmin_data:
+    driver: local
+    name: lux_pgadmin_data
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INSTRUÇÕES DE USO
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# 1. PRÉ-REQUISITOS:
+#    - Docker Desktop instalado e rodando
+#    - Arquivo .env configurado
+#    - Pastas do Drive e Obsidian criadas
+#
+# 2. PRIMEIRA EXECUÇÃO:
+#    docker-compose up --build
+#
+# 3. ACESSAR SERVIÇOS:
+#    - Windmill Panel: http://localhost:8000
+#    - pgAdmin (opcional): http://localhost:8080
+#
+# 4. TESTAR SISTEMA:
+#    - Criar arquivo CSV em PATH_TO_DRIVE/salao-esposa/teste.csv
+#    - Verificar logs: docker-compose logs -f marketing_engine
+#    - Confira o Obsidian: novo arquivo .md deve aparecer
+#
+# 5. PARAR SERVIÇOS:
+#    docker-compose down
+#
+# 6. PARAR E REMOVER TUDO (INCLUINDO DADOS):
+#    docker-compose down -v
+#
+# ═══════════════════════════════════════════════════════════════════════════════

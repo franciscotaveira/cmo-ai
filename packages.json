@@ -1,0 +1,118 @@
+{
+  "escova": {
+    "name": "Pacotes de Escova",
+    "min_quantity": 4,
+    "payment": "a_vista",
+    "payment_methods": [
+      "pix",
+      "dinheiro"
+    ],
+    "tiers": [
+      {
+        "quantity": 4,
+        "validity_days": 30,
+        "prices": {
+          "lisa": {
+            "regular": 59,
+            "package": 55
+          },
+          "modelada": {
+            "regular": 69,
+            "package": 65
+          }
+        }
+      },
+      {
+        "quantity": 8,
+        "validity_days": 60,
+        "prices": {
+          "lisa": {
+            "regular": 59,
+            "package": 52
+          },
+          "modelada": {
+            "regular": 69,
+            "package": 59
+          }
+        }
+      }
+    ],
+    "premium_addons": {
+      "coreano": {
+        "per_escova": 30
+      },
+      "labrisa": {
+        "per_escova": 25
+      },
+      "kerastase": {
+        "per_escova": 30
+      }
+    }
+  },
+  "gel": {
+    "name": "Pacotes de Esmaltação em Gel",
+    "min_quantity": 3,
+    "payment": "a_vista",
+    "tiers": [
+      {
+        "quantity": 3,
+        "validity_days": 60,
+        "prices": {
+          "lu": {
+            "regular": 120,
+            "package": 99
+          },
+          "davila": {
+            "regular": 140,
+            "package": 120
+          }
+        }
+      },
+      {
+        "quantity": 6,
+        "validity_days": 120,
+        "prices": {
+          "lu": {
+            "regular": 120,
+            "package": 99
+          },
+          "davila": {
+            "regular": 140,
+            "package": 120
+          }
+        }
+      }
+    ]
+  },
+  "tradicional": {
+    "name": "Pacotes de Unha Tradicional",
+    "payment": "a_vista",
+    "options": [
+      {
+        "maos": 4,
+        "pes": 0,
+        "validity_days": 30
+      },
+      {
+        "maos": 4,
+        "pes": 1,
+        "validity_days": 30
+      },
+      {
+        "maos": 4,
+        "pes": 2,
+        "validity_days": 40
+      }
+    ],
+    "prices": {
+      "davila": {
+        "mao": 45,
+        "pe": 55
+      },
+      "outras": {
+        "mao": 38,
+        "pe": 40
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LayoutDashboard } from "lucide-react";
 
 const Github = () => {
   return (
@@ -488,23 +489,28 @@ export default function Home() {
           </p>
           <Typing />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://github.com/vudovn/antigravity-kit"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Github />
-            GitHub
-          </a>
-          <Link
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="/docs"
-          >
-            Documentation
-          </Link>
-        </div>
+        <Link
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-5 text-white transition-all hover:bg-blue-500 shadow-lg shadow-blue-500/20 md:w-[220px] font-bold"
+          href="/dashboard"
+        >
+          <LayoutDashboard size={20} />
+          Acessar Dashboard
+        </Link>
+        <a
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-zinc-100 px-5 text-zinc-900 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700 md:w-[158px]"
+          href="https://github.com/vudovn/antigravity-kit"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Github />
+          GitHub
+        </a>
+        <Link
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-zinc-100 px-5 text-zinc-900 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700 md:w-[158px]"
+          href="/docs"
+        >
+          Documentation
+        </Link>
       </main>
     </div>
   );

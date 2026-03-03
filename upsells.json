@@ -1,0 +1,62 @@
+{
+  "lavatorio": {
+    "name": "Upgrades de Lavatório",
+    "base": {
+      "brand": "Cadiveu",
+      "note": "Produtos da casa"
+    },
+    "premium_options": [
+      {
+        "id": "coreano",
+        "name": "Produtos Coreanos",
+        "addon": 30,
+        "applies_to": [
+          "escova",
+          "tratamentos"
+        ]
+      },
+      {
+        "id": "labrisa",
+        "name": "Produtos La Brisa",
+        "addon": 25,
+        "applies_to": [
+          "escova",
+          "tratamentos"
+        ]
+      },
+      {
+        "id": "kerastase",
+        "name": "Produtos Kérastase",
+        "addon": 30,
+        "applies_to": [
+          "escova",
+          "tratamentos"
+        ]
+      }
+    ],
+    "rules": [
+      "Promoções valem somente para produtos da casa",
+      "Upgrades não entram em promo",
+      "Secretária não fecha comanda de upsell"
+    ]
+  },
+  "adicionais": [
+    {
+      "id": "adicional_mega",
+      "name": "Adicional Mega Hair",
+      "price": 20,
+      "applies_to": [
+        "escova_lisa",
+        "escova_modelada"
+      ]
+    },
+    {
+      "id": "tintura_sobrancelha",
+      "name": "Tintura de Sobrancelha",
+      "price": 20,
+      "applies_to": [
+        "design_sobrancelha"
+      ]
+    }
+  ]
+}

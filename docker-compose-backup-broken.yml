@@ -1,0 +1,267 @@
+version: '3.8'
+
+services:
+  # 1. VISUAL LAYER (React Dashboard)
+  command-tower-ui:
+    image: node:20-alpine
+    container_name: command-tower-ui
+    working_dir: /app
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - ./:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_APP_ENV=development
+    command: sh -c "npm install && npm run dev -- --host"
+    restart: unless-stopped
+
+  # 2. SUB-AGENT 001: Haven Receptionist
+  haven-receptionist-api:
+    build:
+      context: ./agents/haven-receptionist
+    container_name: haven-receptionist-api
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - REDIS_URL=redis://command-tower-redis:6379
+      - EVOLUTION_API_URL=http://command-tower-evo-api:8080
+      - OPEN_ROUTER_KEY=${OPEN_ROUTER_KEY}
+      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    env_file:
+      - ./agents/haven-receptionist/.env
+    depends_on:
+      - command-tower-redis
+      - command-tower-evo-api
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - ./agents/haven-receptionist/src:/app/src
+    restart: unless-stopped
+
+  # 3. SUB-AGENT 002: Ranck AI (Local SEO)
+  ranck-ai-service:
+    image: node:20-alpine
+    container_name: ranck-ai-service
+    working_dir: /app
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - ./engines/ranck-ai:/app
+      - /app/node_modules
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - GBP_MOCK=false
+    command: sh -c "npm install express cors axios && node src/index.js"
+    restart: unless-stopped
+
+  # 4. SUB-AGENT 003: Ads Manager (Growth ROI)
+  ads-manager-service:
+    image: node:20-alpine
+    container_name: ads-manager-service
+    working_dir: /app
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - ./engines/ads-manager:/app
+      - /app/node_modules
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - ADS_MOCK=false
+      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - META_ACCESS_TOKEN=${META_ACCESS_TOKEN}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_DEVELOPER_TOKEN=${GOOGLE_DEVELOPER_TOKEN}
+    command: sh -c "npm install express cors axios @supabase/supabase-js facebook-nodejs-business-sdk google-ads-api && node src/index.js"
+    restart: unless-stopped
+
+  # 5. AGENT MEMORY (Redis)
+  command-tower-redis:
+    image: redis:7-alpine
+    container_name: command-tower-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - redis_data_tower:/data
+    restart: unless-stopped
+
+  # 4. WHATSAPP GATEWAY (Evolution API & DB)
+  command-tower-evo-db:
+    image: postgres:15-alpine
+    container_name: command-tower-evo-db
+    environment:
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=evolutionpass
+      - POSTGRES_DB=evolution
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - evo_db_data_tower:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  command-tower-evo-api:
+    image: atendai/evolution-api:v2.2.3
+    container_name: command-tower-evo-api
+    ports:
+      - "8081:8080"
+    environment:
+      - SERVER_URL=http://command-tower-evo-api:8080
+      - QRCODE_BASE64=true
+      - DOCKER_ENV=true
+      - LOG_LEVEL=ERROR,WARN,DEBUG,INFO,LOG,VERBOSE,DARK,WEBHOOKS
+      - LOG_COLOR=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:evolutionpass@command-tower-evo-db:5432/evolution?schema=public
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=mothership_master_2026
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://command-tower-redis:6379
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://command-tower-redis:6379
+      - GLOBAL_API_KEY=mothership_master_2026
+      - WEBSOCKET_ENABLED=true
+      - WEBHOOK_GLOBAL_URL=http://haven-receptionist-api:3003/webhook/evolution
+      - WEBHOOK_EVENTS_ERRORS=true
+      - WEBHOOK_EVENTS_MESSAGES_UPSERT=true
+      - CONFIG_SESSION_PHONE_VERSION=2.3000.1031355444
+      - DASHBOARD_ENABLED=true
+
+    depends_on:
+      - command-tower-evo-db
+      - command-tower-redis
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - evo_instances_tower:/evolution/instances
+    restart: unless-stopped
+
+  # 5. PROACTIVE INTELLIGENCE: Executive Insight Engine
+  insight-engine:
+    build:
+      context: ./engines/insight-engine
+    container_name: insight-engine
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "3006:3006"
+    environment:
+      - PORT=3006
+      - OPEN_ROUTER_KEY=${OPEN_ROUTER_KEY}
+      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://command-tower-redis:6379
+      - HAVEN_API_URL=http://haven-receptionist-api:3003
+      - RANCK_API_URL=http://ranck-ai-service:3004
+      - ADS_API_URL=http://ads-manager-service:3005
+      - INSIGHT_CRON_SCHEDULE=0 6 * * *
+    depends_on:
+      - command-tower-redis
+      - haven-receptionist-api
+      - ranck-ai-service
+      - ads-manager-service
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - ./engines/insight-engine:/app
+      - /app/node_modules
+    command: npm run dev
+    restart: unless-stopped
+
+  # 6. TRAINING & OPTIMIZATION: DOJO Training Center
+  dojo-training:
+    build:
+      context: ./engines/dojo-training
+    container_name: dojo-training
+    ports:
+      - "3007:3007"
+    environment:
+      - PORT=3007
+      - OPEN_ROUTER_KEY=${OPEN_ROUTER_KEY}
+      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://command-tower-redis:6379
+      - HAVEN_API_URL=http://haven-receptionist-api:3003
+    depends_on:
+      - command-tower-redis
+      - haven-receptionist-api
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - ./engines/dojo-training:/app
+      - /app/node_modules
+    command: npm run dev
+    restart: unless-stopped
+
+  # 7. CONNECTIVITY HUB: Evolution Connector
+  evolution-connector:
+    build:
+      context: ./engines/evolution-connector
+    container_name: evolution-connector
+    ports:
+      - "3009:3009"
+    environment:
+      - PORT=3009
+      - EVOLUTION_API_URL=http://command-tower-evo-api:8080
+      - EVOLUTION_API_KEY=${EVOLUTION_GLOBAL_API_KEY}
+    depends_on:
+      - command-tower-evo-api
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - ./engines/evolution-connector:/app
+      - /app/node_modules
+    command: npm run dev
+    restart: unless-stopped
+
+  # 8. ANALYTICS HUB: Conversation Sync & Extraction
+  conversation-analytics:
+    build:
+      context: ./engines/conversation-analytics
+    container_name: conversation-analytics
+    ports:
+      - "3008:3008"
+      - "3010:3010"
+    environment:
+      - PORT=3008
+      - WS_PORT=3010
+      - EVOLUTION_API_URL=http://command-tower-evo-api:8080
+      - EVOLUTION_API_KEY=${EVOLUTION_GLOBAL_API_KEY}
+      - POSTGRES_URL=postgresql://evolution:evolutionpass@command-tower-evo-db:5432/evolution?schema=public
+    depends_on:
+      - command-tower-evo-db
+      - command-tower-evo-api
+    volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+      - ./engines/conversation-analytics:/app
+      - /app/node_modules
+    command: npm run dev
+    restart: unless-stopped
+
+  # 12. MCP SIDECARS (Model Context Protocol)
+  mcp-evolution:
+    build:
+      context: ./engines/mcp-evolution
+    container_name: mcp-evolution
+    ports:
+      - "3011:3000"
+    environment:
+      - EVOLUTION_API_URL=http://command-tower-evo-api:8080
+      - EVOLUTION_API_KEY=mothership_master_2026
+    depends_on:
+      - command-tower-evo-api
+    restart: unless-stopped
+
+volumes:
+      - ./agents/haven-receptionist/node_modules:/app/node_modules
+  redis_data_tower:
+  evo_db_data_tower:
+  evo_instances_tower:
