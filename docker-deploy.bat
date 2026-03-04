@@ -1,157 +1,155 @@
 @echo off
 REM ═══════════════════════════════════════════════════════════════════════════════
-REM GITHUB UPLOAD SCRIPT — CMO 360° PLATFORM
+REM CMO 360° — DOCKER DEPLOY AUTOMÁTICO
 REM ═══════════════════════════════════════════════════════════════════════════════
 
 echo.
 echo ═══════════════════════════════════════════════════════════════════════════════
-echo 🚀 GITHUB UPLOAD — CMO 360° v6.1
+echo 🐳 CMO 360° v6.1 — DOCKER DEPLOY
 echo ═══════════════════════════════════════════════════════════════════════════════
 echo.
 
-REM Verificar se Git está instalado
-git --version >nul 2>&1
+REM Verificar Docker
+docker --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Git não encontrado!
-    echo    Instale em: https://git-scm.com/downloads
+    echo ❌ Docker não encontrado!
+    echo    Instale em: https://www.docker.com/products/docker-desktop/
     pause
     exit /b 1
 )
 
-echo ✅ Git encontrado:
-git --version
+echo ✅ Docker encontrado:
+docker --version
 echo.
 
-REM Configurar usuário (se for a primeira vez)
-echo 📋 CONFIGURAÇÃO DO GIT:
-echo.
-git config user.name 2>nul
-if %errorlevel% neq 0 (
-    set /p GIT_NAME="Digite seu nome para Git: "
-    git config --global user.name "%GIT_NAME%"
-)
-
-git config user.email 2>nul
-if %errorlevel% neq 0 (
-    set /p GIT_EMAIL="Digite seu e-mail para Git: "
-    git config --global user.email "%GIT_EMAIL%"
-)
-
-echo.
-echo ═══════════════════════════════════════════════════════════════════════════════
-echo PASSO 1: ADICIONAR ARQUIVOS
-echo ═══════════════════════════════════════════════════════════════════════════════
-echo.
-
-REM Adicionar arquivos
-echo Adicionando arquivos...
-git add .
-
-echo ✅ Arquivos adicionados
-echo.
-
-REM Verificar status
-echo 📊 STATUS:
-git status --short
-echo.
-
-echo ═══════════════════════════════════════════════════════════════════════════════
-echo PASSO 2: COMMIT
-echo ═══════════════════════════════════════════════════════════════════════════════
-echo.
-
-set /p COMMIT_MSG="Digite a mensagem do commit (ou Enter para padrão): "
-if "%COMMIT_MSG%"=="" (
-    set COMMIT_MSG=feat: CMO 360° v6.1 — Platform de Inteligência de Marketing
-)
-
-echo Fazendo commit...
-git commit -m "%COMMIT_MSG%"
-
-if %errorlevel% neq 0 (
+REM Verificar .env
+if not exist ".env" (
+    echo ⚠️  Arquivo .env não encontrado!
     echo.
-    echo ⚠️  Nenhum cambiamento para commitar
-    echo    Ou já está tudo commitado
+    echo Copie .env.example para .env e preencha com suas credenciais:
+    echo   copy .env.example .env
     echo.
     pause
-    exit /b 0
+    exit /b 1
 )
 
-echo ✅ Commit realizado
+echo ✅ Arquivo .env encontrado
 echo.
 
 echo ═══════════════════════════════════════════════════════════════════════════════
-echo PASSO 3: CONFIGURAR REMOTE
+echo PASSO 1: PARAR SERVIÇOS EXISTENTES
 echo ═══════════════════════════════════════════════════════════════════════════════
 echo.
 
-set /p GITHUB_USER="Digite seu usuário do GitHub: "
-set REPO_URL=https://github.com/%GITHUB_USER%/cmo-360-platform.git
+docker-compose down
 
-echo.
-echo Remote URL: %REPO_URL%
+echo ✅ Serviços parados
 echo.
 
-set /p CONFIRM_REMOTE="Confirmar remote? (S/N): "
-if /i "%CONFIRM_REMOTE%"=="S" (
-    git remote remove origin 2>nul
-    git remote add origin %REPO_URL%
-    echo ✅ Remote configurado
+echo ═══════════════════════════════════════════════════════════════════════════════
+echo PASSO 2: CONSTRUIR IMAGENS
+echo ═══════════════════════════════════════════════════════════════════════════════
+echo.
+
+echo Isso pode levar alguns minutos na primeira vez...
+echo.
+
+docker-compose build
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ❌ Erro ao construir imagens!
+    echo    Verifique logs acima.
+    pause
+    exit /b 1
+)
+
+echo ✅ Imagens construídas
+echo.
+
+echo ═══════════════════════════════════════════════════════════════════════════════
+echo PASSO 3: INICIAR SERVIÇOS
+echo ═══════════════════════════════════════════════════════════════════════════════
+echo.
+
+docker-compose up -d
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ❌ Erro ao iniciar serviços!
+    pause
+    exit /b 1
+)
+
+echo ✅ Serviços iniciados
+echo.
+
+REM Aguardar serviços inicializarem
+echo Aguardando serviços inicializarem (30 segundos)...
+timeout /t 30 /nobreak >nul
+
+echo.
+echo ═══════════════════════════════════════════════════════════════════════════════
+echo PASSO 4: VERIFICAR SAÚDE DOS SERVIÇOS
+echo ═══════════════════════════════════════════════════════════════════════════════
+echo.
+
+docker-compose ps
+
+echo.
+echo ═══════════════════════════════════════════════════════════════════════════════
+echo TESTANDO HEALTH CHECKS
+echo ═══════════════════════════════════════════════════════════════════════════════
+echo.
+
+REM Testar backend
+echo Testando backend...
+curl -s http://localhost:8000/health >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ✅ Backend: Online
 ) else (
-    echo ⚠️  Remote não configurado
-    echo    Execute manualmente: git remote add origin %REPO_URL%
-    echo.
-    pause
-    exit /b 0
+    echo ⚠️  Backend: Não respondeu (pode estar inicializando)
 )
 
-echo.
+REM Testar frontend
+echo Testando frontend...
+curl -s http://localhost:5173 >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ✅ Frontend: Online
+) else (
+    echo ⚠️  Frontend: Não respondeu (pode estar inicializando)
+)
 
-echo ═══════════════════════════════════════════════════════════════════════════════
-echo PASSO 4: PUSH PARA GITHUB
-echo ═══════════════════════════════════════════════════════════════════════════════
-echo.
-echo 📤 Enviando para GitHub...
-echo.
-echo ⚠️  Será solicitado:
-echo    - Username: %GITHUB_USER%
-echo    - Password: SEU TOKEN DO GITHUB (não é a senha!)
-echo.
-echo 💡  Criar token em: https://github.com/settings/tokens
-echo    Marque: repo, workflow
-echo.
-
-git push -u origin main
-
-if %errorlevel% neq 0 (
-    echo.
-    echo ❌ Erro ao fazer push!
-    echo.
-    echo Verifique:
-    echo   1. Git token está correto
-    echo   2. Repositório foi criado no GitHub
-    echo   3. Permissões estão corretas
-    echo.
-    echo Para criar token:
-    echo   https://github.com/settings/tokens
-    echo.
-    pause
-    exit /b 1
+REM Testar Redis
+echo Testando Redis...
+docker-compose exec -T redis redis-cli ping >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ✅ Redis: Online
+) else (
+    echo ⚠️  Redis: Não respondeu
 )
 
 echo.
 echo ═══════════════════════════════════════════════════════════════════════════════
-echo ✅ SUCESSO!
+echo ✅ DEPLOY CONCLUÍDO!
 echo ═══════════════════════════════════════════════════════════════════════════════
 echo.
-echo 🎉 Repositório enviado para GitHub!
+echo 📊 SERVIÇOS RODANDO:
 echo.
-echo 📊 URL do repositório:
-echo    %REPO_URL%
+echo    🌐 Frontend:  http://localhost:5173
+echo    🔌 Backend:   http://localhost:8000
+echo    🏥 Health:    http://localhost:8000/health
+echo    💾 Redis:     localhost:6379
 echo.
-echo 🌐 Acesse no navegador:
-echo    https://github.com/%GITHUB_USER%/cmo-360-platform
+echo 📋 COMANDOS ÚTEIS:
+echo.
+echo    Ver logs:         docker-compose logs -f
+echo    Ver status:       docker-compose ps
+echo    Parar:            docker-compose down
+echo    Reiniciar:        docker-compose restart
+echo    Rebuild:          docker-compose up -d --build
 echo.
 echo ═══════════════════════════════════════════════════════════════════════════════
 echo.
+
 pause

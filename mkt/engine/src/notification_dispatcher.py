@@ -14,7 +14,6 @@ from typing import Dict, List, Optional
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.html import MIMEHtml
 import requests
 
 from .email_templates import (
@@ -227,7 +226,7 @@ class NotificationDispatcher:
             msg['To'] = to_email
 
             # Versão HTML
-            html_part = MIMEHtml(html_content, 'html', 'utf-8')
+            html_part = MIMEText(html_content, 'html', 'utf-8')
             msg.attach(html_part)
 
             # Conectar e enviar

@@ -1,21 +1,33 @@
 # Python
-*.py[cod]
 __pycache__/
+*.py[cod]
+*$py.class
 *.pyo
 *.pyd
 
 # Virtual Environments
 env/
 venv/
+.venv/
+.venv_mkt/
+.venv_old/
+.venv*/
 ENV/
 env.bak/
 venv.bak/
+.env
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
 
 # IDEs
 .idea/
+.vscode/
 *.sublime-project
 *.sublime-workspace
-.vscode/
 
 # Jupyter Notebooks
 .ipynb_checkpoints/
@@ -39,6 +51,13 @@ htmlcov/
 *.swo
 *.tmp
 
-# others
+# OS
 .DS_Store
 Thumbs.db
+
+# Project Specific
+mkt/engine/gunicorn.ctl
+swebench_data/
+swebench_repo_structure.zip
+*.pdf
+*.zip

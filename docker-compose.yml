@@ -1,18 +1,19 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# CMO 360° PLATFORM — DOCKER COMPOSE
+# CMO 360° PLATFORM — DOCKER COMPOSE PRODUCTION
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-# Este arquivo sobe toda a infraestrutura do CMO 360°:
-# • Backend (FastAPI + Python)
-# • Frontend (React + Vite)
-# • Database (Supabase - externo)
-# • Redis (cache + WebSockets)
+# Uso:
+#   docker-compose up -d              # Inicia tudo
+#   docker-compose down               # Para tudo
+#   docker-compose logs -f            # Ver logs
+#   docker-compose ps                 # Ver status
 #
-# USO:
-#   docker-compose up -d          # Inicia tudo
-#   docker-compose down           # Para tudo
-#   docker-compose logs -f        # Ver logs
-#   docker-compose ps             # Ver status
+# Serviços:
+#   - backend (FastAPI + Python)
+#   - frontend (React + Vite)
+#   - redis (Cache + WebSockets)
+#   - watcher (Monitora arquivos)
+#   - nginx (Reverse Proxy - produção)
 #
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -24,49 +25,70 @@ services:
   # ─────────────────────────────────────────────────────────────────────────────
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ./mkt/engine
+      dockerfile: ../../docker/Dockerfile.backend
     container_name: cmo-backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8088:8088"
     environment:
       - PYTHONUNBUFFERED=1
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
       - GROQ_API_KEY=${GROQ_API_KEY}
       - REDIS_URL=redis://redis:6379
-      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:80
+      - SECRET_KEY=${SECRET_KEY}
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME}
     volumes:
-      - ./backend:/app
-      - ./drive_input:/app/data/input
+      - ./mkt/engine:/app
+      - ./drive_input:/app/data/input:ro
       - ./obsidian_vault:/app/data/obsidian
+      - ./logs:/app/logs
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - cmo-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   # ─────────────────────────────────────────────────────────────────────────────
   # FRONTEND (React + Vite)
   # ─────────────────────────────────────────────────────────────────────────────
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./docker/Dockerfile.frontend
+      target: builder
       args:
-        - VITE_API_URL=http://localhost:8000
+        - VITE_API_URL=http://localhost:8088
+        - VITE_SUPABASE_URL=${SUPABASE_URL}
+        - VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
     container_name: cmo-frontend
     restart: unless-stopped
+    command: npm run dev -- --host 0.0.0.0
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:8088
       - VITE_SUPABASE_URL=${SUPABASE_URL}
       - VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
     volumes:
@@ -76,14 +98,20 @@ services:
       - backend
     networks:
       - cmo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # REDIS (Cache + WebSockets)
+  # REDIS (Cache + WebSockets + Message Queue)
   # ─────────────────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: cmo-redis
     restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     volumes:
@@ -92,17 +120,22 @@ services:
       - cmo-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   # ─────────────────────────────────────────────────────────────────────────────
   # WATCHER (Monitora arquivos em background)
   # ─────────────────────────────────────────────────────────────────────────────
   watcher:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ./mkt/engine
+      dockerfile: ../../docker/Dockerfile.backend
     container_name: cmo-watcher
     restart: unless-stopped
     command: python -m src.watcher_service
@@ -110,18 +143,27 @@ services:
       - PYTHONUNBUFFERED=1
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
       - PATH_TO_DRIVE=/app/data/input
       - PATH_TO_OBSIDIAN=/app/data/obsidian
       - REDIS_URL=redis://redis:6379
+      - WATCHER_INTERVAL=300
+      - WATCHER_RECURSIVE=true
     volumes:
-      - ./backend:/app
+      - ./mkt/engine:/app
       - ./drive_input:/app/data/input
       - ./obsidian_vault:/app/data/obsidian
+      - ./logs:/app/logs
     depends_on:
       - redis
       - backend
     networks:
       - cmo-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
   # ─────────────────────────────────────────────────────────────────────────────
   # NGINX (Reverse Proxy - Produção)
@@ -134,8 +176,9 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - ./docker/nginx/logs:/var/log/nginx
     depends_on:
       - frontend
       - backend
@@ -143,13 +186,22 @@ services:
       - cmo-network
     profiles:
       - production
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
 
 networks:
   cmo-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
 
 volumes:
   redis_data:
+    driver: local
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # VARIÁVEIS DE AMBIENTE
@@ -162,5 +214,12 @@ volumes:
 # SUPABASE_ANON_KEY=your-anon-key
 # GROQ_API_KEY=gsk-your-key
 # SECRET_KEY=your-secret-key-min-32-chars
+#
+# SMTP_SERVER=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=seu-email@gmail.com
+# SMTP_PASSWORD=your-app-password
+# EMAIL_FROM=alertas@cmo360.com
+# EMAIL_FROM_NAME=CMO 360° Alertas
 #
 # ═══════════════════════════════════════════════════════════════════════════════

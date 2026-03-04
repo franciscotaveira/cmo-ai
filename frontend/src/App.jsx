@@ -1,520 +1,337 @@
-import { useState, useEffect } from 'react'
-import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
-} from 'recharts'
-import { 
-  TrendingUp, TrendingDown, AlertTriangle, Brain, 
-  DollarSign, Users, Activity, ArrowUpRight, ArrowDownRight 
-} from 'lucide-react'
-import axios from 'axios'
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * APP — CMO 360° Command Center (COM BGPattern)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * Aplicação principal do CMO 360° Frontend
+ * Conectado com API Backend em http://localhost:8088
+ * Com BGPattern para backgrounds decorativos
+ */
 
-const API_URL = 'http://localhost:8000'
+import { useState } from 'react';
+import {
+  TrendingUp,
+  AlertTriangle,
+  Brain,
+  DollarSign,
+  Users,
+  Activity,
+  RefreshCw,
+  XCircle,
+  CheckCircle,
+  Wifi,
+  WifiOff,
+  TrendingDown,
+} from 'lucide-react';
+import { useDashboard } from './hooks/useDashboard';
+import { KPICard } from './components/KPICard';
+import { BGPattern } from './components/ui/bg-pattern';
+import './index.css';
+// Assuming 'cn' utility is imported or defined elsewhere, e.g., from 'lib/utils'
+import { cn } from '@/lib/utils';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// APP COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function App() {
-  const [dashboard, setDashboard] = useState(null)
-  const [alerts, setAlerts] = useState([])
-  const [insights, setInsights] = useState([])
-  const [channels, setChannels] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [lastUpdate, setLastUpdate] = useState(new Date())
+  const {
+    dashboard,
+    alerts,
+    insights,
+    channels,
+    loading,
+    error,
+    lastUpdate,
+    refresh,
+    acknowledgeAlert,
+    wsConnected,
+  } = useDashboard(300000);
 
-  useEffect(() => {
-    fetchData()
-    const interval = setInterval(fetchData, 300000) // Atualiza a cada 5 min
-    return () => clearInterval(interval)
-  }, [])
+  const [acknowledging, setAcknowledging] = useState(null);
 
-  const fetchData = async () => {
+  // ═════════════════════════════════════════════════════════════════════════════
+  // HANDLERS
+  // ═════════════════════════════════════════════════════════════════════════════
+
+  const handleAcknowledge = async (alertId) => {
+    setAcknowledging(alertId);
     try {
-      const [dashboardRes, alertsRes, insightsRes, channelsRes] = await Promise.all([
-        axios.get(`${API_URL}/api/dashboard`),
-        axios.get(`${API_URL}/api/alerts`),
-        axios.get(`${API_URL}/api/insights`),
-        axios.get(`${API_URL}/api/channels/performance`)
-      ])
-
-      setDashboard(dashboardRes.data)
-      setAlerts(alertsRes.data.slice(0, 5))
-      setInsights(insightsRes.data.slice(0, 3))
-      setChannels(channelsRes.data)
-      setLoading(false)
-      setLastUpdate(new Date())
-    } catch (error) {
-      console.error('Erro ao buscar dados:', error)
-      setLoading(false)
+      await acknowledgeAlert(alertId);
+    } catch (err) {
+      console.error('❌ Erro ao reconhecer alerta:', err);
+    } finally {
+      setAcknowledging(null);
     }
-  }
+  };
 
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case 'critical': return '#ef4444'
-      case 'high': return '#f97316'
-      case 'medium': return '#eab308'
-      default: return '#6b7280'
-    }
-  }
+  // ═════════════════════════════════════════════════════════════════════════════
+  // HELPERS
+  // ═════════════════════════════════════════════════════════════════════════════
 
-  const getChannelStatus = (roas) => {
-    if (roas >= 4) return { color: '#22c55e', label: 'Excelente' }
-    if (roas >= 2.5) return { color: '#eab308', label: 'Bom' }
-    return { color: '#ef4444', label: 'Crítico' }
-  }
+  const formatCurrency = (val) =>
+    val === 0 ? '--' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-  if (loading) {
+  const formatNumber = (val) => val === 0 ? '--' : val?.toLocaleString('pt-BR');
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // LOADING / ERROR RENDER (Simplified)
+  // ═════════════════════════════════════════════════════════════════════════════
+
+  if (loading && !dashboard) {
     return (
-      <div style={styles.loading}>
-        <Activity size={48} color="#3b82f6" />
-        <h2>Carregando CMO 360°...</h2>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center animate-in fade-in duration-700">
+          <Activity size={48} className="mx-auto mb-4 animate-pulse text-primary" />
+          <h2 className="text-xl font-semibold opacity-70">Sincronizando Métrica Real...</h2>
+        </div>
       </div>
-    )
+    );
   }
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // MAIN RENDER
+  // ═════════════════════════════════════════════════════════════════════════════
+
+  const kpis = dashboard?.kpis || {};
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <header style={styles.header}>
-        <div>
-          <h1 style={styles.title}>🎯 CMO 360° — Command Center</h1>
-          <p style={styles.subtitle}>
-            Última atualização: {lastUpdate.toLocaleTimeString('pt-BR')}
-          </p>
+    <div className="relative min-h-screen bg-background selection:bg-primary/20">
+      <BGPattern
+        variant="grid"
+        mask="fade-y"
+        size={24}
+        fill="#b89b76"
+        className="opacity-[0.05]"
+      />
+
+      {/* HEADER PREMIUM */}
+      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute -inset-1 rounded-full bg-primary/20 blur animate-pulse" />
+                <Brain className="relative text-primary" size={32} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground font-serif">
+                  CMO 360° <span className="text-primary/60 text-sm font-sans font-medium px-2 py-0.5 rounded-full border border-primary/20 ml-2">v7.0</span>
+                </h1>
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">
+                  <div className={`h-1.5 w-1.5 rounded-full ${wsConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`} />
+                  {wsConnected ? 'Conectado em Tempo Real' : 'Conexão Offline'} •
+                  Última: {lastUpdate?.toLocaleTimeString('pt-BR')}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              {dashboard?.is_demo && (
+                <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-600 text-xs font-semibold">
+                  <AlertTriangle size={14} /> Modo Demonstração
+                </div>
+              )}
+              <button
+                onClick={refresh}
+                className="flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-5 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary hover:text-white"
+              >
+                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                {loading ? 'Sincronizando...' : 'Atualizar'}
+              </button>
+            </div>
+          </div>
         </div>
-        <button onClick={fetchData} style={styles.refreshButton}>
-          🔄 Atualizar
-        </button>
       </header>
 
-      {/* KPIs */}
-      <div style={styles.kpisGrid}>
-        <KpiCard
-          icon={DollarSign}
-          title="Receita Hoje"
-          value={`R$ ${dashboard?.kpis.revenue_today.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          change={dashboard?.kpis.revenue_change}
-          color="#22c55e"
-        />
-        <KpiCard
-          icon={Users}
-          title="CAC Médio"
-          value={`R$ ${dashboard?.kpis.cac_average.toFixed(2)}`}
-          change={dashboard?.kpis.cac_change}
-          color="#ef4444"
-        />
-        <KpiCard
-          icon={TrendingUp}
-          title="ROAS Médio"
-          value={`${dashboard?.kpis.roas_average.toFixed(1)}x`}
-          change={dashboard?.kpis.roas_change}
-          color="#3b82f6"
-        />
-        <KpiCard
-          icon={Activity}
-          title="NPS"
-          value={dashboard?.kpis.nps_average.toString()}
-          change={dashboard?.kpis.nps_change}
-          color="#8b5cf6"
-        />
-      </div>
+      <main className="relative z-10 container mx-auto px-6 py-10 space-y-12">
 
-      {/* Alertas e Insights */}
-      <div style={styles.contentGrid}>
-        {/* Alertas */}
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>
-              <AlertTriangle size={20} color="#ef4444" />
-              🚨 Alertas Críticos ({alerts.length})
-            </h2>
+        {/* KPI GRID */}
+        <section className="animate-in slide-in-from-bottom-4 duration-500">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <KPICard
+              title="Receita Atribuída"
+              value={formatCurrency(kpis.revenue?.value || 0)}
+              change={kpis.revenue?.trend || 0}
+              icon={DollarSign}
+              color="#22c55e"
+              lineage={kpis.revenue?.lineage}
+            />
+            <KPICard
+              title="Ad Spend (Google/Meta)"
+              value={formatCurrency(kpis.spend?.value || 0)}
+              change={kpis.spend?.trend || 0}
+              icon={Activity}
+              color="#3b82f6"
+              lineage={kpis.spend?.lineage}
+            />
+            <KPICard
+              title="ROAS Geral"
+              value={`${(kpis.roas?.value || 0).toFixed(2)}x`}
+              change={kpis.roas?.trend || 0}
+              icon={TrendingUp}
+              color="#8b5cf6"
+              lineage={kpis.roas?.lineage}
+            />
+            <KPICard
+              title="CAC Médio"
+              value={formatCurrency(kpis.cac?.value || 0)}
+              change={kpis.cac?.trend || 0}
+              icon={Users}
+              color="#f43f5e"
+              lineage={kpis.cac?.lineage}
+            />
           </div>
-          <div style={styles.alertsList}>
-            {alerts.length === 0 ? (
-              <p style={styles.emptyState}>✅ Nenhum alerta crítico</p>
-            ) : (
-              alerts.map(alert => (
-                <div key={alert.id} style={styles.alertItem}>
-                  <div style={styles.alertHeader}>
-                    <span style={styles.alertSeverity}>
-                      🔴 {alert.metric_key.replace('_', ' ').title()}
-                    </span>
-                    <span style={styles.alertTenant}>{alert.tenant_name}</span>
+        </section>
+
+        {/* ALERTS & INSIGHTS */}
+        <section className="grid gap-8 lg:grid-cols-5">
+          <div className="lg:col-span-2 space-y-6">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+              <span className="h-1 w-1 bg-red-500 rounded-full" /> Auditoria de Saúde
+            </h2>
+            <div className="space-y-4">
+              {alerts?.length > 0 ? alerts.map(alert => (
+                <div key={alert.id} className="relative group overflow-hidden bg-card border border-border/40 p-4 rounded-2xl hover:border-red-500/50 transition-all duration-300 shadow-sm">
+                  <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleAcknowledge(alert.id)} className="text-xs font-bold text-red-500 hover:underline">Resolver</button>
                   </div>
-                  <div style={styles.alertBody}>
-                    <span>Valor: <strong>{alert.metric_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
-                    {alert.expected_value && (
-                      <span>Esperado: <strong>{alert.expected_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
-                    )}
-                    {alert.z_score && (
-                      <span>Z-Score: <strong>{alert.z_score.toFixed(2)}</strong></span>
-                    )}
-                  </div>
-                  <div style={styles.alertFooter}>
-                    <span style={styles.alertTime}>
-                      {new Date(alert.detected_at).toLocaleString('pt-BR')}
-                    </span>
-                    <button style={styles.alertAction}>Ver Detalhes</button>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+                      <AlertTriangle size={20} />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-bold text-foreground">Anomalia detectada: {alert.metric_key?.toUpperCase()}</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{alert.message || 'Desvio estatístico identificado no comportamento do canal.'}</p>
+                      <div className="pt-2 flex items-center gap-3 text-[10px] text-muted-foreground">
+                        <span className="font-mono bg-secondary font-bold px-1.5 py-0.5 rounded">Z-Score: {alert.z_score?.toFixed(2)}</span>
+                        <span>Há {Math.round((new Date() - new Date(alert.detected_at)) / 60000)}m atrás</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))
-            )}
+              )) : (
+                <div className="py-20 text-center border border-dashed border-border/60 rounded-2xl">
+                  <CheckCircle className="mx-auto text-green-500 mb-2 opacity-50" size={32} />
+                  <p className="text-xs text-muted-foreground font-medium italic">Todos os sistemas em regime de conformidade.</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Insights */}
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>
-              <Brain size={20} color="#8b5cf6" />
-              🤖 Insights da IA ({insights.length})
+          <div className="lg:col-span-3 space-y-6">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+              <span className="h-1 w-1 bg-primary rounded-full" /> Copiloto Estratégico
             </h2>
-          </div>
-          <div style={styles.insightsList}>
-            {insights.length === 0 ? (
-              <p style={styles.emptyState}>✅ Sem insights novos</p>
-            ) : (
-              insights.map(insight => (
-                <div key={insight.id} style={styles.insightItem}>
-                  <div style={styles.insightHeader}>
-                    <span style={styles.insightTenant}>{insight.tenant_name}</span>
-                    {insight.confidence_score && (
-                      <span style={styles.confidence}>
-                        {(insight.confidence_score * 100).toFixed(0)}% confiança
-                      </span>
-                    )}
-                  </div>
-                  <p style={styles.insightContext}>{insight.context}</p>
-                  <div style={styles.insightFooter}>
-                    <span style={styles.insightTime}>
-                      {new Date(insight.created_at).toLocaleString('pt-BR')}
-                    </span>
-                    <button style={styles.insightAction}>Ver Análise</button>
+            <div className="grid gap-4 sm:grid-cols-1">
+              {insights?.length > 0 ? insights.map(insight => (
+                <div key={insight.id} className="relative group bg-primary/5 border border-primary/20 p-6 rounded-2xl hover:bg-primary/10 transition-all duration-300">
+                  <div className="flex items-start gap-5">
+                    <div className="flex-shrink-0 w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary border border-primary/10">
+                      <Brain size={24} />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Análise Predictiva</span>
+                        <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Score: {(insight.confidence_score * 100).toFixed(0)}%</span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground leading-normal">{insight.context}</p>
+                      <p className="text-xs text-muted-foreground/80 leading-relaxed italic border-l-2 border-primary/20 pl-3">"{insight.ai_response?.substring(0, 150)}..."</p>
+                    </div>
                   </div>
                 </div>
-              ))
-            )}
+              )) : (
+                <div className="py-20 text-center bg-card/40 border border-border/40 rounded-2xl">
+                  <RefreshCw className="mx-auto text-muted-foreground mb-2 opacity-30 animate-spin-slow" size={32} />
+                  <p className="text-xs text-muted-foreground font-medium italic">Aguardando novos sinais de mercado para análise.</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Performance por Canal */}
-      <div style={styles.card}>
-        <div style={styles.cardHeader}>
-          <h2 style={styles.cardTitle}>
-            <TrendingUp size={20} color="#3b82f6" />
-            📈 Performance por Canal
+        {/* CHANNEL TABLE PREMIUM */}
+        <section className="space-y-6">
+          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+            <span className="h-1 w-1 bg-blue-500 rounded-full" /> Eficiência por Canal
           </h2>
-        </div>
-        <div style={styles.tableContainer}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Canal</th>
-                <th style={styles.th}>Spend</th>
-                <th style={styles.th}>Receita</th>
-                <th style={styles.th}>ROAS</th>
-                <th style={styles.th}>CTR</th>
-                <th style={styles.th}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {channels.map((channel, index) => {
-                const status = getChannelStatus(channel.roas)
-                return (
-                  <tr key={index}>
-                    <td style={styles.td}>{channel.channel}</td>
-                    <td style={styles.td}>R$ {channel.spend.toLocaleString('pt-BR')}</td>
-                    <td style={styles.td}>R$ {channel.revenue.toLocaleString('pt-BR')}</td>
-                    <td style={styles.td}>{channel.roas.toFixed(2)}x</td>
-                    <td style={styles.td}>{channel.ctr.toFixed(2)}%</td>
-                    <td style={styles.td}>
-                      <span style={{ ...styles.statusBadge, backgroundColor: status.color }}>
-                        {status.label}
+          <div className="overflow-hidden bg-card border border-border/40 rounded-3xl shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-secondary/30">
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Canal de Aquisição</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right">Spend Total</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right">Receita Direta</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right">ROAS</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center">Benchmark</th>
+                </tr>
+              </thead>
+              <tbody>
+                {channels?.length > 0 ? channels.map((ch, idx) => (
+                  <tr key={idx} className="border-t border-border/30 hover:bg-primary/[0.02] transition-colors group">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-primary/40 group-hover:scale-150 transition-transform" />
+                        <span className="text-sm font-bold text-foreground">{ch.channel}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 text-right text-sm font-mono text-muted-foreground">{formatCurrency(ch.spend)}</td>
+                    <td className="px-8 py-5 text-right text-sm font-bold text-foreground">{formatCurrency(ch.revenue)}</td>
+                    <td className="px-8 py-5 text-right">
+                      <span className={cn(
+                        "text-xs font-black px-3 py-1 rounded-full",
+                        ch.roas >= 4 ? "bg-green-500/10 text-green-600" : ch.roas >= 2.5 ? "bg-yellow-500/10 text-yellow-600" : "bg-red-500/10 text-red-600"
+                      )}>
+                        {ch.roas?.toFixed(2)}x
                       </span>
                     </td>
+                    <td className="px-8 py-5 text-center">
+                      <div className="flex justify-center">
+                        <div className="w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
+                          <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${Math.min(ch.roas * 20, 100)}%` }} />
+                        </div>
+                      </div>
+                    </td>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                )) : (
+                  <tr>
+                    <td colSpan="5" className="px-8 py-20 text-center italic text-muted-foreground text-xs font-medium">Sincronizando canais de mídia...</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      {/* Footer */}
-      <footer style={styles.footer}>
-        <p>CMO 360° Platform v1.0.0 • Powered by FastAPI + React</p>
+      </main>
+
+      <footer className="border-t border-border/40 py-12 bg-card/30">
+        <div className="container mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60">
+            &copy; 2026 CMO 360° • MCT LTDA • All rights reserved
+          </div>
+          <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest">
+            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Audit Trail</a>
+            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Gov Portal</a>
+            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">API Docs</a>
+          </div>
+        </div>
       </footer>
     </div>
-  )
+  );
 }
 
-// KPI Card Component
-function KpiCard({ icon: Icon, title, value, change, color }) {
-  const isPositive = change >= 0
-  return (
-    <div style={{ ...styles.kpiCard, borderLeft: `4px solid ${color}` }}>
-      <div style={styles.kpiHeader}>
-        <Icon size={24} color={color} />
-        <span style={styles.kpiTitle}>{title}</span>
-      </div>
-      <div style={styles.kpiValue}>{value}</div>
-      <div style={styles.kpiChange}>
-        {isPositive ? (
-          <ArrowUpRight size={16} color="#22c55e" />
-        ) : (
-          <ArrowDownRight size={16} color="#ef4444" />
-        )}
-        <span style={{ color: isPositive ? '#22c55e' : '#ef4444' }}>
-          {change >= 0 ? '+' : ''}{change.toFixed(1)}%
-        </span>
-      </div>
-    </div>
-  )
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function getChannelStatus(roas) {
+  if (roas >= 4) return { color: '#22c55e', label: 'Excelente' };
+  if (roas >= 2.5) return { color: '#eab308', label: 'Bom' };
+  return { color: '#ef4444', label: 'Crítico' };
 }
 
-// Styles
-const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#f8fafc',
-    padding: '20px'
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '30px',
-    padding: '20px',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-  },
-  title: {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    color: '#1e293b',
-    margin: '0 0 5px 0'
-  },
-  subtitle: {
-    fontSize: '14px',
-    color: '#64748b',
-    margin: 0
-  },
-  refreshButton: {
-    padding: '10px 20px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '500'
-  },
-  kpisGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px',
-    marginBottom: '30px'
-  },
-  kpiCard: {
-    backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-  },
-  kpiHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '10px'
-  },
-  kpiTitle: {
-    fontSize: '14px',
-    color: '#64748b',
-    fontWeight: '500'
-  },
-  kpiValue: {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: '5px'
-  },
-  kpiChange: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '5px',
-    fontSize: '14px',
-    fontWeight: '500'
-  },
-  contentGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-    gap: '20px',
-    marginBottom: '30px'
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    overflow: 'hidden'
-  },
-  cardHeader: {
-    padding: '20px',
-    borderBottom: '1px solid #e2e8f0'
-  },
-  cardTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1e293b',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    margin: 0
-  },
-  alertsList: {
-    padding: '20px'
-  },
-  alertItem: {
-    padding: '15px',
-    backgroundColor: '#fef2f2',
-    borderRadius: '8px',
-    marginBottom: '10px',
-    border: '1px solid #fecaca'
-  },
-  alertHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '10px'
-  },
-  alertSeverity: {
-    fontWeight: '600',
-    color: '#ef4444'
-  },
-  alertTenant: {
-    fontSize: '13px',
-    color: '#64748b'
-  },
-  alertBody: {
-    display: 'flex',
-    gap: '20px',
-    fontSize: '14px',
-    color: '#475569',
-    marginBottom: '10px'
-  },
-  alertFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  alertTime: {
-    fontSize: '12px',
-    color: '#94a3b8'
-  },
-  alertAction: {
-    padding: '6px 12px',
-    backgroundColor: '#ef4444',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '13px'
-  },
-  insightsList: {
-    padding: '20px'
-  },
-  insightItem: {
-    padding: '15px',
-    backgroundColor: '#f5f3ff',
-    borderRadius: '8px',
-    marginBottom: '10px',
-    border: '1px solid #ddd6fe'
-  },
-  insightHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '10px'
-  },
-  insightTenant: {
-    fontWeight: '600',
-    color: '#7c3aed'
-  },
-  confidence: {
-    fontSize: '12px',
-    color: '#9333ea',
-    backgroundColor: '#f3e8ff',
-    padding: '4px 8px',
-    borderRadius: '4px'
-  },
-  insightContext: {
-    fontSize: '14px',
-    color: '#475569',
-    marginBottom: '10px',
-    lineHeight: '1.5'
-  },
-  insightFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  insightTime: {
-    fontSize: '12px',
-    color: '#94a3b8'
-  },
-  insightAction: {
-    padding: '6px 12px',
-    backgroundColor: '#8b5cf6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '13px'
-  },
-  emptyState: {
-    textAlign: 'center',
-    color: '#64748b',
-    padding: '40px 20px'
-  },
-  tableContainer: {
-    overflowX: 'auto',
-    padding: '20px'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse'
-  },
-  th: {
-    textAlign: 'left',
-    padding: '12px',
-    backgroundColor: '#f8fafc',
-    fontWeight: '600',
-    color: '#475569',
-    borderBottom: '2px solid #e2e8f0'
-  },
-  td: {
-    padding: '12px',
-    borderBottom: '1px solid #e2e8f0',
-    color: '#1e293b'
-  },
-  statusBadge: {
-    padding: '4px 12px',
-    borderRadius: '12px',
-    fontSize: '12px',
-    fontWeight: '500',
-    color: 'white'
-  },
-  footer: {
-    textAlign: 'center',
-    padding: '20px',
-    color: '#94a3b8',
-    fontSize: '14px'
-  },
-  loading: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-    gap: '20px'
-  }
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPORT DEFAULT
+// ═══════════════════════════════════════════════════════════════════════════════
 
-export default App
+export default App;

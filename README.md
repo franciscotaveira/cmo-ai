@@ -97,51 +97,55 @@ cmo-360-platform/
 
 ## 🚀 Quick Start
 
-### **1. Clone**
+### **Opção A: Docker (Recomendado)** 🐳
+
 ```bash
+# 1. Clone
 git clone https://github.com/yourusername/cmo-360-platform.git
 cd cmo-360-platform
+
+# 2. Configure .env
+cp .env.example .env
+# Edite com suas credenciais
+
+# 3. Deploy automático (Windows)
+docker-deploy.bat
+
+# OU deploy manual (Linux/Mac/Windows)
+docker-compose up -d --build
+
+# 4. Acesse
+# Frontend: http://localhost:5173
+# Backend: http://localhost:8000
 ```
 
-### **2. Configure .env**
+---
+
+### **Opção B: Manual (Python)** 🐍
+
 ```bash
+# 1. Clone
+git clone https://github.com/yourusername/cmo-360-platform.git
+cd cmo-360-platform
+
+# 2. Configure .env
 cp mkt/.env.example mkt/.env
 
-# Edite com:
-# - SUPABASE_URL, SUPABASE_KEY
-# - SMTP_USER, SMTP_PASSWORD (Gmail)
-# - GROQ_API_KEY (opcional)
-# - PATH_TO_DRIVE, PATH_TO_OBSIDIAN
-```
-
-### **3. Instale**
-```bash
-# Criar ambiente virtual
+# 3. Instale
 python -m venv .venv
 .venv\Scripts\activate  # Windows
 source .venv/bin/activate  # Linux/Mac
 
-# Instalar dependências
 pip install -r mkt/engine/requirements.txt
-```
 
-### **4. Suba o Banco**
-```bash
-# No Supabase SQL Editor:
+# 4. Suba o Banco (Supabase)
 # Execute: sql/01-08_create_*.sql (na ordem)
-```
 
-### **5. Teste**
-```bash
-# Testar notificações
+# 5. Teste
 python mkt/engine/test_notifications.py
-
-# Testar IA
 python mkt/engine/test_ai_insights.py
-```
 
-### **6. Rode**
-```bash
+# 6. Rode
 python -m mkt.engine.main
 ```
 

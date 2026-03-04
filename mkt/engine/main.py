@@ -45,6 +45,8 @@ from src.ai_insights import AIInsightsEngine, LLMProvider
 from src.growth_marketing import GrowthMarketingEngine
 from src.brand_communication import BrandCommunicationEngine
 from src.executive_dashboard import ExecutiveDashboard
+from src.cmo_bench import CMOLearningLoop, BusinessIssue
+from src.notification_dispatcher import NotificationDispatcher
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONFIGURAÇÕES
@@ -55,10 +57,24 @@ OBSIDIAN_PATH = os.getenv("PATH_TO_OBSIDIAN", "/app/obsidian_output")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# WEBHOOK SERVER (FastAPI)
+# WEBHOOK SERVER & API (FastAPI)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-app = FastAPI(title="MDCC Webhook Receiver")
+from src.api_routes import router as api_router
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(title="CMO 360° - Webhook & API Receiver")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(api_router)
+
 
 @app.post("/webhook/approve")
 async def approve_action(request: Request):
@@ -166,6 +182,14 @@ def main():
         # Executive Dashboard (v5.3: NOVO - CMO 360°)
         cmo_dashboard = ExecutiveDashboard()
         logger.info("📊 ExecutiveDashboard inicializado (v5.3)")
+
+        # CMO-Bench (v6.0: NOVO - Aprendizado tipo SWE-bench)
+        cmo_bench = CMOLearningLoop(db)
+        logger.info("🧠 CMOLearningLoop inicializado (v6.0)")
+
+        # Notification Dispatcher (v6.1: NOVO - Notificações multi-canal)
+        notifications = NotificationDispatcher()
+        logger.info("📬 NotificationDispatcher inicializado (v6.1)")
 
     except Exception as e:
         logger.error(f"❌ Erro ao inicializar componentes: {e}")
@@ -336,6 +360,50 @@ def main():
                             )
                             brand.write_brand_report_to_obsidian(tenant_name, OBSIDIAN_PATH)
 
+                            # v6.0: CMO-Bench — Processar alertas com aprendizado
+                            logger.info(f"🧠 CMO-Bench: Processando alertas para {tenant_name}...")
+                            critical_alerts = db.get_critical_alerts(tenant_id=tenant_id, limit=5)
+                            for alert in critical_alerts:
+                                try:
+                                    business_issue = BusinessIssue(
+                                        id=alert.get('id'),
+                                        title=f"{alert.get('metric_key')} {alert.get('severity')}",
+                                        description=f"{alert.get('metric_key')} está {alert.get('z_score', 0):.2f} desvios acima",
+                                        tenant_id=tenant_id,
+                                        tenant_type='default',
+                                        severity=alert.get('severity', 'medium'),
+                                        detected_at=alert.get('detected_at'),
+                                        metrics_involved=[alert.get('metric_key')]
+                                    )
+                                    result = cmo_bench.process_business_issue(business_issue, tenant_id)
+                                    if result.get('learned'):
+                                        logger.info(f"✅ CMO-Bench aprendeu com alerta: {alert.get('id')}")
+                                except Exception as e:
+                                    logger.error(f"⚠️ Erro no CMO-Bench para {tenant_name}: {e}")
+
+                            # v6.1: Notification Dispatcher — Enviar alertas por e-mail
+                            logger.info(f"📬 Notifications: Verificando alertas para {tenant_name}...")
+                            critical_alerts = db.get_critical_alerts(tenant_id=tenant_id, status='new', limit=10)
+                            if critical_alerts:
+                                try:
+                                    # Obter e-mail do tenant (simplificado - na prática viria do banco)
+                                    tenant_owner_email = "admin@empresa.com"  # Substituir por busca real
+
+                                    for alert in critical_alerts:
+                                        notifications.send_critical_alert(
+                                            alert=alert,
+                                            channels=['email'],
+                                            user_preferences={'email': tenant_owner_email}
+                                        )
+                                        # Marcar como notificado
+                                        db.update_alert_status(alert.get('id'), 'acknowledged')
+
+                                    logger.info(f"✅ {len(critical_alerts)} alertas notificados para {tenant_name}")
+                                except Exception as e:
+                                    logger.error(f"⚠️ Erro ao enviar notificações para {tenant_name}: {e}")
+                            else:
+                                logger.info(f"✅ Sem novos alertas para {tenant_name}")
+
                             # v5.3: CMO Executive Dashboard (Integrado com dados reais)
                             cmo_dashboard.generate_cmo_dashboard(
                                 tenant_name=tenant_name,
@@ -364,7 +432,7 @@ def main():
 
         # Iniciar Web Server (Blocking)
         logger.info("✅" * 30)
-        logger.info("🎯 MARKETING ENGINE v5.3 — CMO 360° PRONTO E MONITORANDO")
+        logger.info("🎯 MARKETING ENGINE v6.1 — CMO 360° 100% INTEGRADO")
         logger.info(f"🌐 Servidor de Webhooks: http://0.0.0.0:8088")
         logger.info(f"🧠 Exocórtex: {OBSIDIAN_PATH}/🧠 EXOCÓRTEX")
         logger.info("")
@@ -379,6 +447,11 @@ def main():
         logger.info(f"📋 Kanban: {OBSIDIAN_PATH}/🧠 EXOCÓRTEX/03 - Kanban Rotina")
         logger.info(f"🚨 Alertas: {OBSIDIAN_PATH}/🧠 EXOCÓRTEX/02 - Alertas Críticos")
         logger.info(f"📊 Dashboards: {OBSIDIAN_PATH}/🧠 EXOCÓRTEX/00 - Dashboards")
+        logger.info("")
+        logger.info("🆕 NOVO na v6.1:")
+        logger.info(f"🧠 CMO-Bench: Aprendizado com casos passados")
+        logger.info(f"📬 Notifications: E-mails automáticos de alertas")
+        logger.info(f"🎨 Frontend: React + Vite + BGPattern")
         logger.info("✅" * 30)
 
         uvicorn.run(app, host="0.0.0.0", port=8088)
